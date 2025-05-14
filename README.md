@@ -1,63 +1,76 @@
-## 🕹️ Taboo YOLO Game
-Taboo YOLO Game is an interactive AI-powered word-guessing game where players must describe a hidden object without using taboo words, and an image generator + object detector decide if they win the round!
+## 🎮 Taboo YOLO Game
+Taboo YOLO is an interactive, AI-powered word-guessing game that fuses creativity, vision AI, and classic party game mechanics.
+Your goal? Describe a secret word without using the forbidden "taboo" words — and let AI be the judge!
 
-The game combines:
+## 🧠 How It Works
+You're given an answer word (e.g., pizza) and a list of taboo words (e.g., Italian, Napoli, mozzarella).
 
-🎨 Image generation (via Stable Diffusion or DALL·E)
+You must write a creative sentence to describe the object — without using any of the taboo words.
 
-🧠 Object detection using YOLOv8
+The system uses Cloudflare Workers AI or Stable Diffusion to generate an image from your sentence.
 
-🧩 A fun twist on the classic Taboo game
+Then, YOLOv8 (You Only Look Once) scans the image to detect if your described object actually appears.
 
-## 🚀 How It Works
-The player is given a target word (e.g., "pizza") and a list of taboo words (e.g., "Italian", "Napoli").
+If YOLO detects the target object → ✅ You win the round!
+If not → ❌ Try again next round.
 
-They must write a creative sentence to describe the target without using the forbidden terms.
-
-The system uses a text-to-image model to generate an image based on that sentence.
-
-Then, YOLOv8 scans the generated image to check if it contains the target object.
-
-If YOLO finds the object — ✅ CORRECT!
-If not — ❌ WRONG.
-
-## 🧰 Tech Stack
-Python
-
-YOLOv8 (Ultralytics)
-
-Stable Diffusion (via Hugging Face)
-
-Pillow and Tkinter for GUI and image editing
-
-OpenAI or Hugging Face APIs for image generation
+## ⚙️ Tech Stack
+- Image Generation	Stable Diffusion (Cloudflare Workers AI / Hugging Face)
+- Object Detection	YOLOv8 via Ultralytics
+- Taboo Word Filtering	Python NLP string processing
+- Backend Code	Pure Python
 
 ## ✨ Features
-Fun and educational image-based guessing game
+🧩 Classic Taboo game logic
+🎨 Real-time AI image generation
+🔍 Smart object detection with YOLO
+🚫 Taboo word validation (with plural, case-insensitive matching)
+🖼️ Image feedback with detection overlay
+🪄 Extendable for multiplayer or web version
 
-Real-time object detection feedback
+## 📦 Setup Instructions
+``` bash
+ # Clone the repo
+git clone https://github.com/yourname/taboo-with-ai.git
+cd taboo-with-ai
 
-Taboo word filtering and validation
-
-Simple and intuitive GUI
-
-Easily extendable for more complex game logic
-
-## 📦 Setup
-Clone the repo
-
-Install dependencies
-
-Set your API keys (for image generation)
-
-Run the game and start playing!
-
-```bash
+# Create and activate virtual environment
+python3 -m venv taboo
+source taboo/bin/activate  # or taboo\Scripts\activate on Windows
+``` bash
+# Install dependencies
 pip install -r requirements.txt
+
+# Set up API keys (for image generation)
+echo 'ACCOUNT_ID = "6362fed1c93bcd019be986b093d3a5bb"
+API_TOKEN = "5O9fRfD9o7UiLgVb8kq-rOD9mWzMgO9XfYqEYFcW"' > key.txt
+
+# Run the game!
 python main.py
 ```
-## 💡 Example Prompt
-Describe “pizza” without using: pizza, italian, napoli, table
-→ “A round dish with melted cheese and crispy crust baked in an oven”
 
-🧠 Your creativity decides if the AI sees it too!
+## 💡 Example Round
+```
+🎯 ANSWER: pizza  
+🚫 TABOO WORDS: italian, napoli, mediterranean, mozzarella, tomato  
+
+🤖 Describe it:
+→ "A round dish with cheese, sauce, and toppings baked in the oven."
+If YOLO detects a pizza in the generated image → ✅ you score a point!
+```
+## 🔄 Game Flow
+```
+📌 Round 1:
+- You get a word and taboo list
+- Write your prompt
+- AI generates image
+- YOLO checks for match
+- Score is updated
+Play multiple rounds and challenge your creativity while competing against the AI!
+```
+
+## 🧩 Coming Soon
+Multiplayer mode (pass & play or networked)
+Leaderboards
+Image customization and filters
+Better semantic taboo filtering
