@@ -1,79 +1,123 @@
 import requests
 from ultralytics import YOLO
 from PIL import Image, ImageDraw, ImageFont
+import base64
+import random
+import ast
+import re
 
-def read_api_key(filename="key.txt"):
+def read_credentials(filename="key.txt"):
+    creds = {}
     try:
         with open(filename, "r") as file:
-            key = file.read().strip()
-        return key
+            for line in file:
+                if "=" in line:
+                    key, value = line.strip().split("=", 1)
+                    creds[key.strip()] = value.strip().strip('"')
     except FileNotFoundError:
         print(f"Error: {filename} not found.")
-        return None
+    return creds
 
-def get_user_input(answer, taboo_words):
-    # Display the instructions with the taboo words
-    print(f"""
-    --------------------------------------------------------
-    Welcome to the Taboo YOLO Game!
-    
-    Objective:
-    You need to describe an object or concept related to "{answer}".
-    However, be careful! You are NOT allowed to use the following taboo words:
-    
-    {', '.join(taboo_words)}
+def load_taboo_file(filename="taboo.txt"):
+    taboo_dict = {}
+    try:
+        with open(filename, "r") as file:
+            for line in file:
+                if "=" in line:
+                    key, value = line.strip().split("=", 1)
+                    key = key.strip().strip('"')
+                    value = ast.literal_eval(value.strip())
+                    taboo_dict[key] = value
+    except FileNotFoundError:
+        print(f"Error: {filename} not found.")
+    return taboo_dict
 
-    Instructions:
-    Please describe the object or concept in a sentence WITHOUT using the taboo words.
-    Your description should give enough clues for the image generator to create the correct image.
+def print_game_intro():
+    print("""
+    ========================================================
+                      🎯 TABOO YOLO GAME 🎯
+    ========================================================
 
-    Example:
-    If the object is "pizza", a valid description might be: 
-    "A round dish with cheese, sauce, and toppings baked in the oven."
+    👋 Welcome to the Taboo YOLO Game!
 
-    Now, go ahead and give it a try. What would you like to say to the image generator?
+    🧠 Objective:
+        Describe a secret object or concept — but with a twist!
+        You are given an ANSWER and a list of TABOO WORDS.
+        Your challenge is to describe the object *without using* any taboo words.
 
-    --------------------------------------------------------
+    🚫 Taboo Words:
+        These are words you CANNOT say in your description.
+        Think creatively and give clues using alternative phrases!
 
-    Your description: 
+    🖼️ How the Game Works:
+        1. You will describe the answer (without taboo words).
+        2. Your description will be passed to an image generator (like Stable Diffusion).
+        3. YOLO (You Only Look Once) object detection will analyze the generated image.
+        4. The AI tries to guess your original answer — based on what it *sees*.
+
+    ✅ Example:
+        ANSWER: "pizza"  
+        TABOO WORDS: ["italian", "napoli", "mediterranean", "mozzarella", "tomato"]
+
+        ✔ Valid Description:
+            "A round dish with cheese, sauce, and toppings baked in the oven."
+
+    🕹️ Your Turn:
+        Get ready to describe without saying too much!
+        Impress the AI with your creativity.
+
+    ========================================================
     """)
 
-    # Prompt user to input their description
-    user_input = input()
+def normalize(word):
+    # Lowercase, remove punctuation, and strip simple plural
+    word = re.sub(r'[^\w\s]', '', word.lower())  # Remove punctuation
+    if word.endswith('s') and len(word) > 3:
+        word = word[:-1]  # crude plural stripping
+    return word
 
-    # Validate the input
-    while any(word in user_input.lower() for word in [answer] + taboo_words):
-        print("\nOops! Your description contains one or more taboo words.")
-        print(f"Remember, you cannot use the target object '{answer}' or any of these taboo words: {', '.join(taboo_words)}.")
-        print("\nPlease try again.")
+def get_user_input(answer, taboo_words):
+    normalized_taboo_set = set(normalize(w) for w in [answer] + taboo_words)
+
+    while True:
+        user_input = input("👉 Your description: ")
         
-        # Prompt the user again if the input was invalid
-        user_input = input("Your description: ")
-    
-    return user_input
+        # Normalize and split user input
+        words = [normalize(w) for w in user_input.split()]
+
+        if any(w in normalized_taboo_set for w in words):
+            print("\n🚫 Oops! Your description contains a taboo word or the answer itself.")
+            print(f"❗ You cannot use '{answer}' or any of these taboo words: {', '.join(taboo_words)}.")
+            print("🔁 Please try again.\n")
+        else:
+            return user_input
 
 def generate_image(prompt, img_path):
 
-    key = read_api_key()
+    creds = read_credentials()
 
-    response = requests.post(
-        f"https://api.stability.ai/v2beta/stable-image/generate/core",
-        headers={
-            "authorization": f"Bearer "+key,
-            "accept": "image/*"
-        },
-        files={"none": ''},
-        data={
-            "prompt": prompt,
-            "output_format": "png",
-        },
-    )
+    ACCOUNT_ID = creds["ACCOUNT_ID"]
+    API_TOKEN = creds["API_TOKEN"]
+
+    url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell"
+
+    headers = {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "prompt": prompt,
+        "seed": 5  # Optional, or randomize if you want
+    }
+    response = requests.post(url, headers=headers, json=payload)
 
     if response.status_code == 200:
-        with open("./"+img_path, 'wb') as file:
-            file.write(response.content)
+        image_base64 = response.json()["result"]["image"]
+        with open(img_path, "wb") as f:
+            f.write(base64.b64decode(image_base64))
     else:
-        raise Exception(str(response.json()))
+        raise Exception(str(response.status_code))
 
 def validate_image(answer, img_path):
     # Load model and run detection
@@ -138,14 +182,55 @@ def print_result(found, img, draw):
     img.save("result.png")
     img.show()
 
-answer = "pizza"
-taboo_words = ["italian", "napoli", "mediterranean", "mozzarella", "tomato"]
-gen_img_name = "generated.png"
-    
-user_input = get_user_input(answer, taboo_words)
+def play_taboo_yolo_game(taboo_data, rounds=5):
+    score = 0
+    used_answers = set()  # To track answers that have already been used
 
-generate_image(user_input, gen_img_name)
+    print("\n🔁 Starting the Taboo YOLO Challenge – 5 Rounds!\n")
 
-found, img, draw = validate_image(answer, gen_img_name)
+    for i in range(1, rounds + 1):
+        print(f"\n================== Round {i} ==================\n")
 
-print_result(found, img, draw)
+        # 1. Randomly select answer and taboo words
+        available_answers = list(set(taboo_data.keys()) - used_answers)  # Remove already used answers
+        answer = random.choice(available_answers)
+        used_answers.add(answer)
+        taboo_words = taboo_data[answer]
+
+        # 2. Show the player their target
+        print(f"🎯 Your target word is: **{answer.upper()}**")
+        print(f"🚫 Taboo words: {', '.join(taboo_words)}")
+        print("💬 Describe it without using any taboo words!\n")
+
+        # 3. Get player input
+        user_input = input("👉 Your description: ")
+
+        # 4. Generate image from user input
+        gen_img_name = f"generated_round_{i}.png"
+        generate_image(user_input, gen_img_name)
+
+        # 5. Use YOLO to detect if answer is in the generated image
+        found, img, draw = validate_image(answer, gen_img_name)
+
+        # 6. Display results and update score
+        print_result(found, img, draw)
+
+        if found:
+            print("✅ Success! The AI guessed it.")
+            score += 1
+        else:
+            print("❌ Missed! The AI didn’t recognize it.")
+
+    # Final score summary
+    print("\n=============================================")
+    print(f"🏁 Game Over! You scored {score} out of {rounds}.")
+    print("=============================================\n")
+
+### Main function ###
+
+# Load the dictionary
+taboo_data = load_taboo_file()
+
+print_game_intro()
+
+play_taboo_yolo_game(taboo_data)
