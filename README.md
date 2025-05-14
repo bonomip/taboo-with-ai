@@ -1,5 +1,6 @@
 ## 🎮 Taboo YOLO Game
 Taboo YOLO is an interactive, AI-powered word-guessing game that fuses creativity, vision AI, and classic party game mechanics.
+
 Your goal? Describe a secret word without using the forbidden "taboo" words — and let AI be the judge!
 
 ## 🧠 How It Works
@@ -37,7 +38,7 @@ cd taboo-with-ai
 # Create and activate virtual environment
 python3 -m venv taboo
 source taboo/bin/activate  # or taboo\Scripts\activate on Windows
-``` bash
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -56,8 +57,9 @@ python main.py
 
 🤖 Describe it:
 → "A round dish with cheese, sauce, and toppings baked in the oven."
-If YOLO detects a pizza in the generated image → ✅ you score a point!
 ```
+If YOLO detects a pizza in the generated image → ✅ you score a point!
+
 ## 🔄 Game Flow
 ```
 📌 Round 1:
@@ -66,11 +68,12 @@ If YOLO detects a pizza in the generated image → ✅ you score a point!
 - AI generates image
 - YOLO checks for match
 - Score is updated
-Play multiple rounds and challenge your creativity while competing against the AI!
 ```
 
+Play multiple rounds and challenge your creativity while competing against the AI!
+
 ## 🧩 Coming Soon
-Multiplayer mode (pass & play or networked)
-Leaderboards
-Image customization and filters
-Better semantic taboo filtering
+- Multiplayer mode (pass & play or networked)
+- Leaderboards
+- Image customization and filters
+- Better semantic taboo filtering
